@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Activity, DollarSign, BarChart2, Eye, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { NEPSE_BASE } from '../apiConfig';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [indices, setIndices] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [gainers, setGainers] = useState<any[]>([]);
@@ -148,8 +150,11 @@ const Dashboard = () => {
           <div>
             {gainers.slice(0, 6).map((g, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1.25rem', borderBottom: i < 5 ? '1px solid var(--color-border)' : 'none' }}>
-                <div>
-                  <p style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }}>{g.symbol}</p>
+                <div 
+                  className="cursor-pointer group"
+                  onClick={() => navigate(`/chart?symbol=${g.symbol}`)}
+                >
+                  <p style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }} className="group-hover:text-blue-400 transition-colors">{g.symbol}</p>
                   <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.securityName}</p>
                 </div>
                 <div className="text-right">
@@ -189,7 +194,12 @@ const Dashboard = () => {
                 return (
                   <tr key={row.symbol}>
                     <td>
-                        <div className="font-bold text-white mb-0.5">{row.symbol}</div>
+                        <button 
+                          onClick={() => navigate(`/chart?symbol=${row.symbol}`)}
+                          className="font-bold text-white mb-0.5 hover:text-blue-400 transition-colors cursor-pointer bg-transparent border-none p-0 text-left"
+                        >
+                          {row.symbol}
+                        </button>
                         <div className="text-[10px] text-gray-500 truncate max-w-[120px]">{row.securityName}</div>
                     </td>
                     <td className="text-right font-bold text-white">Rs. {row.lastTradedPrice}</td>

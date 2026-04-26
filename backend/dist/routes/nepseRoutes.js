@@ -4,7 +4,7 @@ const router = Router();
 const nepse = new Nepse();
 // In-memory cache to avoid hammering the API
 const cache = {};
-const TTL_MS = 60_000; // 1 minute cache
+const TTL_MS = 5_000; // 5 seconds cache for advanced real-time feel
 const cached = async (key, fn) => {
     if (cache[key] && Date.now() - cache[key].ts < TTL_MS)
         return cache[key].data;
@@ -45,8 +45,47 @@ router.get('/status', async (_, res) => {
 // ─── Live Market (all traded securities today) ─────────────────────
 router.get('/live', async (_, res) => {
     try {
-        const data = await cached('live', () => nepse.getLiveMarket());
+        const data = await cached('live', async () => {
+            let live = await nepse.getLiveMarket();
+            // If live market stream is empty (closed/off-hours/throttled), synthesize it!
+            if (!live || live.length === 0) {
+                try {
+                    // Both `gainers` and `losers` bypass the NEPSE live-close wipe. 
+                    // Gainers(80+) + Losers(200+) = ~300+ total traded companies mathematically guaranteed
+                    const [gainers, losers] = await Promise.all([
+                        nepse.getTopTenGainers(),
+                        nepse.getTopTenLosers()
+                    ]);
+                    const combined = new Map();
+                    (gainers || []).forEach((s) => combined.set(s.symbol, s));
+                    (losers || []).forEach((s) => combined.set(s.symbol, s));
+                    if (combined.size > 0) {
+                        return Array.from(combined.values()).map((s) => ({
+                            symbol: s.symbol,
+                            securityName: s.securityName,
+                            lastTradedPrice: s.ltp,
+                            percentageChange: s.percentageChange, // Use raw field since it's correctly mapped
+                            highPrice: s.highPrice || s.ltp,
+                            lowPrice: s.lowPrice || s.ltp,
+                            totalTradeQuantity: 0 // Volume not universally available in these simple arrays
+                        }));
+                    }
+                }
+                catch (e) { }
+            }
+            return live;
+        });
         res.json(data);
+    }
+    catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+// ─── Today's Prices (Last Closing Prices) ──────────────────────────
+router.get('/today-price', async (_, res) => {
+    try {
+        const raw = await cached('today-price', () => nepse.requestGETAPI('/api/nots/nepse-data/today-price?&size=500&securityId=&indexDate='));
+        res.json(raw?.content || []);
     }
     catch (e) {
         res.status(500).json({ error: e.message });

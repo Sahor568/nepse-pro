@@ -102,8 +102,8 @@ const TVChart = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const location = useLocation();
-  const [symbol, setSymbol] = useState(new URLSearchParams(location.search).get('symbol') || 'NABIL');
-  const [timeframe, setTimeframe] = useState('1D');
+  const [symbol, setSymbol] = useState(() => new URLSearchParams(location.search).get('symbol') || localStorage.getItem('tvchart_symbol') || 'NABIL');
+  const [timeframe, setTimeframe] = useState(() => localStorage.getItem('tvchart_timeframe') || '1D');
   const [securities, setSecurities] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,16 +111,30 @@ const TVChart = () => {
   const [ohlc, setOhlc] = useState<any>(null);
   
   // Advanced Indicator State
-  const [activeIndicators, setActiveIndicators] = useState<any[]>([
-    { id: 'vol', type: 'Volume', params: { color: '#26a69a' } },
-    { id: 'sma_1', type: 'SMA', params: { period: 20, color: '#fdd835' } }
-  ]);
+  const [activeIndicators, setActiveIndicators] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('tvchart_indicators');
+      return saved ? JSON.parse(saved) : [
+        { id: 'vol', type: 'Volume', params: { color: '#26a69a' } },
+        { id: 'sma_1', type: 'SMA', params: { period: 20, color: '#fdd835' } }
+      ];
+    } catch {
+      return [];
+    }
+  });
   const [showIndPicker, setShowIndPicker] = useState(false);
   const [editingInd, setEditingInd] = useState<any>(null);
+
+  // Sync to local storage
+  useEffect(() => { localStorage.setItem('tvchart_symbol', symbol); }, [symbol]);
+  useEffect(() => { localStorage.setItem('tvchart_timeframe', timeframe); }, [timeframe]);
+  useEffect(() => { localStorage.setItem('tvchart_indicators', JSON.stringify(activeIndicators)); }, [activeIndicators]);
 
   useEffect(() => {
     fetch(`${NEPSE_BASE}/securities`).then(res => res.json()).then(data => setSecurities(data || []));
   }, []);
+
+  const candleSeriesRef = useRef<any>(null);
 
   const buildChart = useCallback(async () => {
     if (!containerRef.current) return;
@@ -128,17 +142,94 @@ const TVChart = () => {
     try {
       let data: any[] = [];
       const isIntraday = ['1m', '5m', '15m', '1h', '4h'].includes(timeframe);
+      
       if (isIntraday) {
         const resp = await fetch(`${NEPSE_BASE}/intraday/${symbol}`);
         const raw = await resp.json();
-        data = (raw || []).map((p: any) => ({
-          time: p.time as Time,
-          open: p.contractRate, high: p.contractRate, low: p.contractRate, close: p.contractRate, volume: p.contractQuantity || 0
-        })).sort((a: any, b: any) => (a.time as number) - (b.time as number));
+        
+        let intervalSecs = 60; // 1m
+        if (timeframe === '5m') intervalSecs = 300;
+        else if (timeframe === '15m') intervalSecs = 900;
+        else if (timeframe === '1h') intervalSecs = 3600;
+        else if (timeframe === '4h') intervalSecs = 14400;
+
+        const buckets: Record<number, any> = {};
+        (raw || []).forEach((p: any) => {
+            const t = p.time; // NEPSE timestamp is UNIX seconds
+            const bucketKey = Math.floor(t / intervalSecs) * intervalSecs;
+            
+            if (!buckets[bucketKey]) {
+                buckets[bucketKey] = {
+                    time: bucketKey as Time,
+                    open: p.contractRate,
+                    high: p.contractRate,
+                    low: p.contractRate,
+                    close: p.contractRate,
+                    volume: p.contractQuantity || 0,
+                    firstT: t,
+                    lastT: t
+                };
+            } else {
+                const b = buckets[bucketKey];
+                b.high = Math.max(b.high, p.contractRate);
+                b.low = Math.min(b.low, p.contractRate);
+                b.volume += (p.contractQuantity || 0);
+                
+                if (t < b.firstT) { b.firstT = t; b.open = p.contractRate; }
+                if (t >= b.lastT) { b.lastT = t; b.close = p.contractRate; }
+            }
+        });
+        
+        data = Object.values(buckets).sort((a: any, b: any) => (a.time as number) - (b.time as number));
       } else {
-        const resp = await fetch(`${NEPSE_BASE}/history/${symbol}`);
-        const hist = await resp.json();
-        data = aggregateData(Array.isArray(hist) ? hist : [], timeframe);
+        // Fetch historical data AND today's raw trades at the same time to prevent the "1 day late" API delay! 
+        const [histResp, liveResp] = await Promise.all([
+           fetch(`${NEPSE_BASE}/history/${symbol}`),
+           fetch(`${NEPSE_BASE}/intraday/${symbol}`)
+        ]);
+        const hist = await histResp.json();
+        const live = await liveResp.json();
+        
+        const aggregated = aggregateData(Array.isArray(hist) ? hist : [], timeframe);
+        
+        // Build today's live candle from intraday data
+        if (Array.isArray(live) && live.length > 0) {
+           let todayOpen = live[0].contractRate;
+           let todayHigh = live[0].contractRate;
+           let todayLow = live[0].contractRate;
+           let todayClose = live[live.length - 1].contractRate;
+           let todayVol = 0;
+           
+           live.forEach((p: any) => {
+              todayHigh = Math.max(todayHigh, p.contractRate);
+              todayLow = Math.min(todayLow, p.contractRate);
+              todayVol += (p.contractQuantity || 0);
+           });
+           
+           // Nepse intraday time is in Unix. We need today's YYYY-MM-DD in Nepal timezone (UTC+5:45).
+           const nepalOffsetMs = (5 * 60 + 45) * 60 * 1000;
+           const todayDate = new Date(Date.now() + nepalOffsetMs).toISOString().split('T')[0];
+           
+           // Overwrite or append the candle for the live day
+           const lastCandle = aggregated[aggregated.length - 1];
+           if (lastCandle && lastCandle.time === todayDate) {
+              lastCandle.high = Math.max(lastCandle.high, todayHigh);
+              lastCandle.low = Math.min(lastCandle.low, todayLow);
+              lastCandle.close = todayClose;
+              lastCandle.volume = Math.max(lastCandle.volume, todayVol);
+           } else {
+              aggregated.push({
+                 time: todayDate,
+                 open: todayOpen,
+                 high: todayHigh,
+                 low: todayLow,
+                 close: todayClose,
+                 volume: todayVol
+              });
+           }
+        }
+        
+        data = aggregated;
       }
       if (!data.length) { setLoading(false); return; }
 
@@ -156,6 +247,7 @@ const TVChart = () => {
 
       const candleSeries = chart.addCandlestickSeries({ upColor: '#089981', downColor: '#f23645', borderVisible: false, wickUpColor: '#089981', wickDownColor: '#f23645' });
       candleSeries.setData(data);
+      candleSeriesRef.current = candleSeries;
 
       // Render Dynamic Indicators
       activeIndicators.forEach(ind => {
@@ -199,6 +291,35 @@ const TVChart = () => {
   }, [symbol, timeframe, activeIndicators]);
 
   useEffect(() => { buildChart(); }, [buildChart]);
+
+  // Real-time chart polling logic
+  useEffect(() => {
+    let interval = setInterval(async () => {
+      if (!candleSeriesRef.current || !chartRef.current) return;
+      try {
+        const isIntraday = ['1m', '5m', '15m', '1h', '4h'].includes(timeframe);
+        if (isIntraday) {
+          const resp = await fetch(`${NEPSE_BASE}/intraday/${symbol}`);
+          const raw = await resp.json();
+          if (raw && raw.length > 0) {
+            const last = raw.sort((a: any, b: any) => (a.time as number) - (b.time as number));
+            const latestNode = last[last.length - 1];
+            candleSeriesRef.current.update({
+              time: latestNode.time as Time,
+              open: latestNode.contractRate,
+              high: latestNode.contractRate,
+              low: latestNode.contractRate,
+              close: latestNode.contractRate,
+              volume: latestNode.contractQuantity || 0
+            });
+          }
+        }
+      } catch (e) {
+        // fail silently to prevent console spam
+      }
+    }, 5000); // Polling every 5 seconds for Real-Time "Advanced" Feel
+    return () => clearInterval(interval);
+  }, [symbol, timeframe]);
 
   const addIndicator = (type: string) => {
     const id = Date.now().toString();

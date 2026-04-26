@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LineChart, Activity, Briefcase, Star, Settings, Search, Bell, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import { NEPSE_BASE } from '../apiConfig';
+import HeaderNotifications from './HeaderNotifications';
 
 const navLinks = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -120,7 +121,7 @@ const Layout = () => {
                  </div>
              )}
              <div className="w-px h-8 bg-border hidden sm:block" />
-             <button className="p-2 text-gray-400 hover:text-white relative"><Bell size={18} /><span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-panel" /></button>
+             <HeaderNotifications mainIndex={mainIndex} ticker={ticker} />
           </div>
         </header>
 

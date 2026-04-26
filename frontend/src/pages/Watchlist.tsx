@@ -1,38 +1,103 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Bell, BellOff, Trash2, TrendingUp, TrendingDown, LayoutGrid, List, Search, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Star, Bell, BellOff, Trash2, TrendingUp, TrendingDown, LayoutGrid, List, Search, Plus, Loader2 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
-import { NEPSE_BASE } from '../apiConfig';
+import { NEPSE_BASE, API_BASE } from '../apiConfig';
 
 const Watchlist = () => {
-  const [watchlist, setWatchlist] = useState<any[]>(() => JSON.parse(localStorage.getItem('watchlist_data') || '[]'));
+  const navigate = useNavigate();
+  const [watchlist, setWatchlist] = useState<any[]>([]);
   const [livePrices, setLivePrices] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    localStorage.setItem('watchlist_data', JSON.stringify(watchlist));
-  }, [watchlist]);
-
-  useEffect(() => {
-    fetch(`${NEPSE_BASE}/live`)
-      .then(res => res.json())
-      .then(data => {
-        const prices: Record<string, any> = {};
-        data.forEach((s: any) => { prices[s.symbol] = s; });
-        setLivePrices(prices);
-      });
-  }, []);
-
-  const addToWatchlist = (stock: any) => {
-    if (!watchlist.find(s => s.symbol === stock.symbol)) {
-      setWatchlist([...watchlist, { ...stock, alert: false }]);
+  const fetchWatchlist = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/user/watchlist`);
+      const data = await res.json();
+      setWatchlist(data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const removeFromWatchlist = (symbol: string) => {
-    setWatchlist(watchlist.filter(s => s.symbol !== symbol));
+  useEffect(() => {
+    fetchWatchlist();
+  }, []);
+
+  const fetchLivePrices = async (symbols: string[]) => {
+    try {
+      const liveRes = await fetch(`${NEPSE_BASE}/live`);
+      const liveData: any[] = await liveRes.json();
+      const liveMap: Record<string, any> = {};
+      liveData.forEach((s: any) => { liveMap[s.symbol] = s; });
+
+      const results = await Promise.all(symbols.map(async (symbol) => {
+        const liveEntry = liveMap[symbol];
+        if (liveEntry && liveEntry.lastTradedPrice) {
+          const ltp = liveEntry.lastTradedPrice;
+          const pct = liveEntry.percentageChange || 0;
+          return { symbol, lastTradedPrice: ltp, percentageChange: Number(pct).toFixed(2) };
+        }
+        // Fallback: use most recent history
+        try {
+          const res = await fetch(`${NEPSE_BASE}/history/${symbol}`);
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const latest = data[data.length - 1];
+            const ltp = latest.ltp || latest.close;
+            const prev = latest.prevClose;
+            const pct = prev > 0 ? ((ltp - prev) / prev) * 100 : 0;
+            return { symbol, lastTradedPrice: ltp, percentageChange: pct.toFixed(2) };
+          }
+        } catch { /* ignore */ }
+        return null;
+      }));
+
+      const prices: Record<string, any> = {};
+      results.forEach(r => { if (r) prices[r.symbol] = r; });
+      setLivePrices(prices);
+    } catch (e) {
+      console.error('Failed to fetch prices:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleAlert = (symbol: string) => {
-    setWatchlist(watchlist.map(s => s.symbol === symbol ? { ...s, alert: !s.alert } : s));
+  useEffect(() => {
+    if (watchlist.length === 0) { setLoading(false); return; }
+    setLoading(true);
+    const uniqueSymbols = [...new Set(watchlist.map(s => s.symbol))] as string[];
+    fetchLivePrices(uniqueSymbols);
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => fetchLivePrices(uniqueSymbols), 30_000);
+    return () => clearInterval(interval);
+  }, [watchlist]);
+
+  const addToWatchlist = async (stock: any) => {
+    if (!watchlist.find(s => s.symbol === stock.symbol)) {
+      try {
+        const res = await fetch(`${API_BASE}/user/watchlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: stock.symbol })
+        });
+        if (res.ok) {
+          fetchWatchlist();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const removeFromWatchlist = async (symbol: string) => {
+    try {
+      await fetch(`${API_BASE}/user/watchlist/${symbol}`, { method: 'DELETE' });
+      fetchWatchlist();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -50,7 +115,9 @@ const Watchlist = () => {
         />
       </div>
 
-      {watchlist.length === 0 ? (
+      {loading && watchlist.length > 0 ? (
+        <div className="flex items-center justify-center p-10"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
+      ) : watchlist.length === 0 ? (
         <div className="card p-20 flex flex-col items-center justify-center text-center opacity-60">
            <Star size={48} className="text-gray-600 mb-4" />
            <h3 className="text-lg font-bold text-white mb-2">Watchlist is empty</h3>
@@ -67,14 +134,13 @@ const Watchlist = () => {
             return (
               <div key={stock.symbol} className="card p-5 animate-fadeUp relative group overflow-hidden">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
-                  <div>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{stock.symbol}</h3>
-                    <p style={{ fontSize: '.75rem', color: 'var(--color-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.securityName}</p>
+                  <div 
+                    className="cursor-pointer group-hover:translate-x-1 transition-transform"
+                    onClick={() => navigate(`/chart?symbol=${stock.symbol}`)}
+                  >
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }} className="group-hover:text-blue-400">{stock.symbol}</h3>
                   </div>
                   <div style={{ display: 'flex', gap: '.5rem' }}>
-                    <button onClick={() => toggleAlert(stock.symbol)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: stock.alert ? 'var(--color-blue)' : 'var(--color-muted)' }}>
-                      {stock.alert ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                    </button>
                     <button onClick={() => removeFromWatchlist(stock.symbol)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-muted)' }} className="hover:text-red-500">
                       <Trash2 className="w-4 h-4" />
                     </button>
