@@ -49,9 +49,7 @@ const Layout = () => {
       {/* Sidebar */}
       <aside className={`fixed md:static inset-y-0 left-0 w-[240px] bg-panel border-r border-border flex flex-col z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="h-14 flex items-center px-5 border-b border-border gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center">
-                <LineChart className="w-4 h-4 text-blue-500" />
-            </div>
+            <img src="/icon.png" alt="NEPSE Pro" className="w-8 h-8" />
             <div className="flex-1">
                 <div className="font-bold text-white text-sm">NEPSE PRO</div>
                 <div className="text-[9px] text-gray-500 font-bold tracking-widest uppercase">Live Terminal</div>

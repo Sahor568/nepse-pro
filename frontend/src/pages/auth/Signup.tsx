@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart2, User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck } from 'lucide-react';
+import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck } from 'lucide-react';
 import { AUTH_BASE } from '../../apiConfig';
 
 const API_BASE = 'http://localhost:5000/api';
@@ -151,10 +151,8 @@ const Signup = () => {
           style={{ backgroundImage: 'linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 w-full max-w-md px-4">
           <div className="flex justify-center mb-8 animate-fadeUp">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(8,153,129,.15)', border: '1px solid rgba(8,153,129,.3)' }}>
-                <BarChart2 className="w-5 h-5" style={{ color: 'var(--color-green)' }} />
-              </div>
+              <div className="flex items-center gap-3">
+              <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
               <div>
                 <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
                 <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart2, Mail, Lock, Eye, EyeOff, LogIn, MailCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, LogIn, MailCheck } from 'lucide-react';
 import { AUTH_BASE } from '../../apiConfig';
 
 const API_BASE = 'http://localhost:5000/api';
@@ -136,10 +136,8 @@ const Login = () => {
           style={{ backgroundImage: 'linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         <div className="relative z-10 w-full max-w-md px-4">
           <div className="flex justify-center mb-8 animate-fadeUp">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(41,98,255,.15)', border: '1px solid rgba(41,98,255,.3)' }}>
-                <BarChart2 className="w-5 h-5" style={{ color: 'var(--color-blue)' }} />
-              </div>
+              <div className="flex items-center gap-3">
+              <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
               <div>
                 <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
                 <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -213,9 +211,7 @@ const Login = () => {
         {/* Logo */}
         <div className="flex justify-center mb-8 animate-fadeUp">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(41,98,255,.15)', border: '1px solid rgba(41,98,255,.3)' }}>
-              <BarChart2 className="w-5 h-5" style={{ color: 'var(--color-blue)' }} />
-            </div>
+            <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
             <div>
               <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
               <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -333,6 +329,17 @@ const Login = () => {
           <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
             🔑 Demo account: <span className="font-semibold text-white">demo@example.com</span> / <span className="font-semibold text-white">password</span>
           </p>
+        </div>
+
+        {/* Footer links */}
+        <div className="mt-6 text-center animate-fadeUp delay-300" style={{ fontSize: '.72rem', color: 'var(--color-dimmed)' }}>
+          <Link to="/about" className="hover:underline" style={{ color: 'var(--color-muted)' }}>About Us</Link>
+          <span className="mx-2">·</span>
+          <Link to="/how-to-use" className="hover:underline" style={{ color: 'var(--color-muted)' }}>How to Use</Link>
+          <span className="mx-2">·</span>
+          <Link to="/terms" className="hover:underline" style={{ color: 'var(--color-muted)' }}>Terms</Link>
+          <span className="mx-2">·</span>
+          <Link to="/disclaimer" className="hover:underline" style={{ color: 'var(--color-muted)' }}>Disclaimer</Link>
         </div>
       </div>
     </div>
