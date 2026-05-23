@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import PublicHeader from './components/PublicHeader';
 import Dashboard from './pages/Dashboard';
 import ChartPage from './pages/ChartPage';
 import MarketWatch from './pages/MarketWatch';
@@ -9,11 +10,22 @@ import Signup from './pages/auth/Signup';
 import Watchlist from './pages/Watchlist';
 import Profile from './pages/Profile';
 import GoogleCallback from './pages/auth/GoogleCallback';
+import About from './pages/About';
+import HowToUse from './pages/HowToUse';
+import Terms from './pages/Terms';
+import Disclaimer from './pages/Disclaimer';
 
 const isAuth = () => !!localStorage.getItem('token');
 
 const Guard = ({ children }: { children: React.ReactNode }) =>
   isAuth() ? <>{children}</> : <Navigate to="/login" replace />;
+
+const PublicLayout = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>
+    <PublicHeader />
+    <main style={{ flex: 1, overflow: 'auto' }}>{children}</main>
+  </div>
+);
 
 function App() {
   return (
@@ -22,6 +34,10 @@ function App() {
         <Route path="/login"  element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/auth/callback" element={<GoogleCallback />} />
+        <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
+        <Route path="/how-to-use" element={<PublicLayout><HowToUse /></PublicLayout>} />
+        <Route path="/terms" element={<PublicLayout><Terms /></PublicLayout>} />
+        <Route path="/disclaimer" element={<PublicLayout><Disclaimer /></PublicLayout>} />
         <Route path="/" element={<Guard><Layout /></Guard>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
