@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, TrendingUp, TrendingDown, Plus, Trash2, Edit2, DollarSign, PieChart, Activity, Loader2, Calendar } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
-import { NEPSE_BASE, API_BASE } from '../apiConfig';
+import { NEPSE_BASE, API_BASE, authFetch } from '../apiConfig';
 
 const Portfolio = () => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const Portfolio = () => {
 
   const fetchPortfolio = async () => {
     try {
-      const res = await fetch(`${API_BASE}/user/portfolio`);
+      const res = await authFetch(`${API_BASE}/user/portfolio`);
       const data = await res.json();
       setHoldings(data);
     } catch (err) {
@@ -85,9 +85,8 @@ const Portfolio = () => {
     
     if (qty && price) {
       try {
-        const res = await fetch(`${API_BASE}/user/portfolio`, {
+        const res = await authFetch(`${API_BASE}/user/portfolio`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             symbol: stock.symbol,
             quantity: parseFloat(qty),
@@ -106,7 +105,7 @@ const Portfolio = () => {
   const removeHolding = async (id: string, symbol: string) => {
     if(!confirm(`Are you sure you want to remove ${symbol} from your portfolio?`)) return;
     try {
-      await fetch(`${API_BASE}/user/portfolio/${id}`, { method: 'DELETE' });
+      await authFetch(`${API_BASE}/user/portfolio/${id}`, { method: 'DELETE' });
       fetchPortfolio();
     } catch (err) {
       console.error(err);
@@ -122,9 +121,8 @@ const Portfolio = () => {
     
     if (qty && price) {
       try {
-        const res = await fetch(`${API_BASE}/user/portfolio/${holding.id}`, {
+        const res = await authFetch(`${API_BASE}/user/portfolio/${holding.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             quantity: parseFloat(qty),
             buy_price: parseFloat(price),

@@ -8,6 +8,7 @@ import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Watchlist from './pages/Watchlist';
 import Profile from './pages/Profile';
+import GoogleCallback from './pages/auth/GoogleCallback';
 
 const isAuth = () => !!localStorage.getItem('token');
 
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/login"  element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/auth/callback" element={<GoogleCallback />} />
         <Route path="/" element={<Guard><Layout /></Guard>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />

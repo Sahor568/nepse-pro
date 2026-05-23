@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,12 +16,20 @@
     "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^7.7.0",
     "@rumess/nepse-api": "^1.0.5",
+    "@types/express-session": "^1.19.0",
+    "@types/nodemailer": "^8.0.0",
+    "@types/passport-google-oauth20": "^2.0.17",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.3",
     "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.7",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "pg": "^8.20.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1"

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star, Bell, BellOff, Trash2, TrendingUp, TrendingDown, LayoutGrid, List, Search, Plus, Loader2 } from 'lucide-react';
 import StockSearch from '../components/StockSearch';
-import { NEPSE_BASE, API_BASE } from '../apiConfig';
+import { NEPSE_BASE, API_BASE, authFetch } from '../apiConfig';
 
 const Watchlist = () => {
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const Watchlist = () => {
 
   const fetchWatchlist = async () => {
     try {
-      const res = await fetch(`${API_BASE}/user/watchlist`);
+      const res = await authFetch(`${API_BASE}/user/watchlist`);
       const data = await res.json();
       setWatchlist(data);
     } catch (err) {
@@ -77,9 +77,8 @@ const Watchlist = () => {
   const addToWatchlist = async (stock: any) => {
     if (!watchlist.find(s => s.symbol === stock.symbol)) {
       try {
-        const res = await fetch(`${API_BASE}/user/watchlist`, {
+        const res = await authFetch(`${API_BASE}/user/watchlist`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbol: stock.symbol })
         });
         if (res.ok) {
@@ -93,7 +92,7 @@ const Watchlist = () => {
 
   const removeFromWatchlist = async (symbol: string) => {
     try {
-      await fetch(`${API_BASE}/user/watchlist/${symbol}`, { method: 'DELETE' });
+      await authFetch(`${API_BASE}/user/watchlist/${symbol}`, { method: 'DELETE' });
       fetchWatchlist();
     } catch (err) {
       console.error(err);

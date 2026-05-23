@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Activity, DollarSign, BarChart2, Eye, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign, BarChart2, ChevronRight, Clock, Loader2 } from 'lucide-react';
 import { NEPSE_BASE } from '../apiConfig';
 
 const Dashboard = () => {
@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [indices, setIndices] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [gainers, setGainers] = useState<any[]>([]);
+  const [losers, setLosers] = useState<any[]>([]);
   const [liveMarket, setLiveMarket] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,16 +19,18 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [idxRes, sumRes, gainRes, liveRes] = await Promise.all([
+        const [idxRes, sumRes, gainRes, lossRes, liveRes] = await Promise.all([
           fetch(`${NEPSE_BASE}/index`),
           fetch(`${NEPSE_BASE}/summary`),
           fetch(`${NEPSE_BASE}/gainers`),
+          fetch(`${NEPSE_BASE}/losers`),
           fetch(`${NEPSE_BASE}/live`)
         ]);
-        
+
         setIndices(await idxRes.json());
         setSummary(await sumRes.json());
         setGainers(await gainRes.json());
+        setLosers(await lossRes.json());
         setLiveMarket(await liveRes.json());
         setLoading(false);
       } catch (err) {
@@ -118,39 +121,13 @@ const Dashboard = () => {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1rem', marginBottom: '1.5rem' }} className="lg:grid hidden-sm">
-        <div className="card" style={{ padding: '0' }}>
-            <div className="card-header"><h3 className="card-title"><Activity className="w-4 h-4 text-blue-500" /> Sub-Indices</h3></div>
-            <div style={{ overflowX: 'auto' }}>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th className="text-left font-bold">Sub Index</th>
-                            <th className="text-right">Value</th>
-                            <th className="text-right">% Change</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {indices.filter(i => i.index !== 'NEPSE Index' && i.index !== 'Sensitive Index').slice(0, 8).map(idx => (
-                            <tr key={idx.id}>
-                                <td className="text-gray-200 font-semibold">{idx.index}</td>
-                                <td className="text-right font-bold">{idx.close?.toLocaleString()}</td>
-                                <td className={`text-right font-bold ${idx.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {idx.change >= 0 ? '+' : ''}{idx.perChange}%
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card">
           <div className="card-header"><h3 className="card-title"><TrendingUp className="w-4 h-4 text-green-500" /> Top Gainers</h3></div>
           <div>
             {gainers.slice(0, 6).map((g, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1.25rem', borderBottom: i < 5 ? '1px solid var(--color-border)' : 'none' }}>
-                <div 
+                <div
                   className="cursor-pointer group"
                   onClick={() => navigate(`/chart?symbol=${g.symbol}`)}
                 >
@@ -160,6 +137,27 @@ const Dashboard = () => {
                 <div className="text-right">
                     <p style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{g.ltp}</p>
                     <span className="badge-up">+{g.percentageChange}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-header"><h3 className="card-title"><TrendingDown className="w-4 h-4 text-red-500" /> Top Losers</h3></div>
+          <div>
+            {losers.slice(0, 6).map((l, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1.25rem', borderBottom: i < 5 ? '1px solid var(--color-border)' : 'none' }}>
+                <div
+                  className="cursor-pointer group"
+                  onClick={() => navigate(`/chart?symbol=${l.symbol}`)}
+                >
+                  <p style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff' }} className="group-hover:text-blue-400 transition-colors">{l.symbol}</p>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.securityName}</p>
+                </div>
+                <div className="text-right">
+                    <p style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{l.ltp}</p>
+                    <span className="badge-down">{l.percentageChange}%</span>
                 </div>
               </div>
             ))}

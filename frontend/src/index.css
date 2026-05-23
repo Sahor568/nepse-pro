@@ -20,6 +20,49 @@
   --font-sans: "Inter", "system-ui", "sans-serif";
 }
 
+/* Light Theme */
+[data-theme="light"] {
+  --color-bg:           #F5F6F8;
+  --color-panel:        #FFFFFF;
+  --color-surface:      #FFFFFF;
+  --color-border:       #E2E4E9;
+  --color-border-light: #D1D3D8;
+  --color-text:         #1A1D21;
+  --color-muted:        #6B7280;
+  --color-dimmed:       #9CA3AF;
+  --color-blue:         #2563EB;
+  --color-blue-dim:     #1D4ED8;
+  --color-green:        #059669;
+  --color-green-dim:    #047857;
+  --color-red:          #DC2626;
+  --color-red-dim:      #B91C1C;
+  --color-gold:         #D97706;
+}
+
+/* Override input colors for light theme */
+[data-theme="light"] .input {
+  background: #FFFFFF;
+  color: #1A1D21;
+  border-color: #E2E4E9;
+}
+[data-theme="light"] .input::placeholder { color: #9CA3AF; }
+[data-theme="light"] .input:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.2);
+}
+
+/* Light theme text overrides */
+[data-theme="light"] body,
+[data-theme="light"] .card-title,
+[data-theme="light"] .data-table td,
+[data-theme="light"] .nav-item:not(.active) {
+  color: #1A1D21;
+}
+[data-theme="light"] .card-header,
+[data-theme="light"] .data-table th {
+  background: #F9FAFB;
+}
+
 /* ── Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 

@@ -50,36 +50,72 @@ router.get('/status', async (_: Request, res: Response) => {
 router.get('/live', async (_: Request, res: Response) => {
   try {
     const data = await cached('live', async () => {
-      let live = await nepse.getLiveMarket();
-      
-      // If live market stream is empty (closed/off-hours/throttled), synthesize it!
-      if (!live || live.length === 0) {
-        try {
-          // Both `gainers` and `losers` bypass the NEPSE live-close wipe. 
-          // Gainers(80+) + Losers(200+) = ~300+ total traded companies mathematically guaranteed
-          const [gainers, losers] = await Promise.all([
-             nepse.getTopTenGainers(),
-             nepse.getTopTenLosers()
-          ]);
-          
-          const combined = new Map();
-          (gainers || []).forEach((s: any) => combined.set(s.symbol, s));
-          (losers || []).forEach((s: any) => combined.set(s.symbol, s));
-          
-          if (combined.size > 0) {
-             return Array.from(combined.values()).map((s: any) => ({
-                 symbol: s.symbol,
-                 securityName: s.securityName,
-                 lastTradedPrice: s.ltp,
-                 percentageChange: s.percentageChange, // Use raw field since it's correctly mapped
-                 highPrice: s.highPrice || s.ltp,
-                 lowPrice: s.lowPrice || s.ltp,
-                 totalTradeQuantity: 0 // Volume not universally available in these simple arrays
-             }));
-          }
-        } catch(e) {}
-      }
-      return live;
+      const [gainers, losers, turnover] = await Promise.all([
+        nepse.getTopTenGainers().catch(() => []),
+        nepse.getTopTenLosers().catch(() => []),
+        nepse.getTopTenTurnoverScrips().catch(() => [])
+      ]);
+
+      // Create turnover map for quick lookup
+      const turnoverMap = new Map();
+      (turnover || []).forEach((t: any) => {
+        turnoverMap.set(t.symbol, {
+          turnover: t.turnover || 0,
+          closingPrice: t.closingPrice || t.ltp || 0,
+          securityId: t.securityId
+        });
+      });
+
+      // Combine gainers and losers
+      const combined = new Map();
+      (gainers || []).forEach((s: any) => {
+        const tInfo = turnoverMap.get(s.symbol) || {};
+        combined.set(s.symbol, {
+          symbol: s.symbol,
+          securityName: s.securityName,
+          lastTradedPrice: s.ltp || s.closePrice || 0,
+          percentageChange: s.percentageChange || 0,
+          highPrice: s.highPrice || s.ltp || 0,
+          lowPrice: s.lowPrice || s.ltp || 0,
+          totalTradeQuantity: tInfo.turnover ? Math.round((tInfo.turnover / (tInfo.closingPrice || 1)) * 100) : 0,
+          totalTradeValue: tInfo.turnover || 0,
+          closePrice: tInfo.closingPrice || s.ltp || 0,
+        });
+      });
+      (losers || []).forEach((s: any) => {
+        if (combined.has(s.symbol)) return;
+        const tInfo = turnoverMap.get(s.symbol) || {};
+        combined.set(s.symbol, {
+          symbol: s.symbol,
+          securityName: s.securityName,
+          lastTradedPrice: s.ltp || s.closePrice || 0,
+          percentageChange: s.percentageChange || 0,
+          highPrice: s.highPrice || s.ltp || 0,
+          lowPrice: s.lowPrice || s.ltp || 0,
+          totalTradeQuantity: tInfo.turnover ? Math.round((tInfo.turnover / (tInfo.closingPrice || 1)) * 100) : 0,
+          totalTradeValue: tInfo.turnover || 0,
+          closePrice: tInfo.closingPrice || s.ltp || 0,
+        });
+      });
+
+// Add remaining turnover stocks
+          (turnover || []).forEach((t: any) => {
+            if (!combined.has(t.symbol)) {
+              combined.set(t.symbol, {
+                symbol: t.symbol,
+                securityName: t.securityName || '',
+                lastTradedPrice: t.closingPrice || t.ltp || 0,
+                percentageChange: 0,
+                highPrice: t.closingPrice || 0,
+                lowPrice: t.closingPrice || 0,
+                totalTradeQuantity: t.turnover ? Math.round(t.turnover / (t.closingPrice || 1)) : 0,
+                totalTradeValue: t.turnover || 0,
+                closePrice: t.closingPrice || 0,
+              });
+            }
+          });
+
+      return Array.from(combined.values());
     });
     res.json(data);
   } catch (e: any) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Briefcase, Activity, AlertCircle, PieChart, Info, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { NEPSE_BASE, API_BASE } from '../apiConfig';
+import { NEPSE_BASE, API_BASE, authFetch } from '../apiConfig';
 
 const HeaderNotifications = ({ mainIndex, ticker }: { mainIndex: any, ticker: any[] }) => {
   const navigate = useNavigate();
@@ -44,7 +44,7 @@ const HeaderNotifications = ({ mainIndex, ticker }: { mainIndex: any, ticker: an
 
     // 2. Portfolio Summary
     try {
-      const pRes = await fetch(`${API_BASE}/user/portfolio`);
+      const pRes = await authFetch(`${API_BASE}/user/portfolio`);
       const portfolio = await pRes.json();
       
       if (portfolio && portfolio.length > 0) {
