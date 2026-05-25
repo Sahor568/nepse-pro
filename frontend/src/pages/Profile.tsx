@@ -3,6 +3,20 @@ import { User, Mail, Phone, Lock, Save, Eye, EyeOff, Shield, Bell, Monitor, Moon
 import { useNavigate } from 'react-router-dom';
 import { API_BASE, authFetch } from '../apiConfig';
 
+const Section = ({ title, children }: any) => (
+  <div className="card" style={{ marginBottom: '1.25rem' }}>
+    <div className="card-header"><h2 className="card-title">{title}</h2></div>
+    <div style={{ padding: '1.25rem' }}>{children}</div>
+  </div>
+);
+
+const Field = ({ label, children }: any) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <label style={{ display: 'block', marginBottom: '.4rem', fontSize: '.7rem', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.07em' }}>{label}</label>
+    {children}
+  </div>
+);
+
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -95,20 +109,6 @@ const Profile = () => {
       setPwError('Server sanga hudaina!');
     }
   };
-
-  const Section = ({ title, children }: any) => (
-    <div className="card" style={{ marginBottom: '1.25rem' }}>
-      <div className="card-header"><h2 className="card-title">{title}</h2></div>
-      <div style={{ padding: '1.25rem' }}>{children}</div>
-    </div>
-  );
-
-  const Field = ({ label, children }: any) => (
-    <div style={{ marginBottom: '1rem' }}>
-      <label style={{ display: 'block', marginBottom: '.4rem', fontSize: '.7rem', fontWeight: 600, color: 'var(--color-muted)', textTransform: 'uppercase', letterSpacing: '.07em' }}>{label}</label>
-      {children}
-    </div>
-  );
 
   if (loading) {
     return (

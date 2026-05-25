@@ -137,7 +137,7 @@ const Login = () => {
         <div className="relative z-10 w-full max-w-md px-4">
           <div className="flex justify-center mb-8 animate-fadeUp">
               <div className="flex items-center gap-3">
-              <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
+              <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
               <div>
                 <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
                 <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -211,7 +211,7 @@ const Login = () => {
         {/* Logo */}
         <div className="flex justify-center mb-8 animate-fadeUp">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
+            <img src="/nepseprologo.png.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
             <div>
               <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
               <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>

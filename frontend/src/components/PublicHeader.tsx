@@ -22,7 +22,7 @@ const PublicHeader = () => {
     }}>
       {/* Logo */}
       <Link to={loggedIn ? '/dashboard' : '/login'} style={{ display: 'flex', alignItems: 'center', gap: '.65rem', textDecoration: 'none' }}>
-        <img src="/icon.png" alt="NEPSE Pro" style={{ width: 32, height: 32 }} />
+        <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 32, height: 32 }} />
         <div>
           <div style={{ fontWeight: 800, color: '#fff', fontSize: '.85rem', lineHeight: 1.2 }}>NEPSE PRO</div>
           <div style={{ fontSize: 8, color: 'var(--color-muted)', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Live Terminal</div>

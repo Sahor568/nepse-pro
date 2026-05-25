@@ -1,4 +1,4 @@
-export const API_BASE = 'https://nepse-pro-api.onrender.com/api';
+export const API_BASE = import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://nepse-pro-api.onrender.com/api';
 export const NEPSE_BASE = `${API_BASE}/nepse`;
 export const AUTH_BASE = `${API_BASE}/auth`;
 export const USER_BASE = `${API_BASE}/user`;
