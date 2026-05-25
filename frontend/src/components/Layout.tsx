@@ -17,8 +17,9 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [indices, setIndices] = useState<any[]>([]);
   const [ticker, setTicker] = useState<any[]>([]);
-
   const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+  const isAuthenticated = !!localStorage.getItem('token');
+  const restrictedPaths = ['/chart', '/portfolio', '/watchlist', '/profile'];
   const initials = (user?.name || 'JD').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
@@ -49,7 +50,7 @@ const Layout = () => {
       {/* Sidebar */}
       <aside className={`fixed md:static inset-y-0 left-0 w-[240px] bg-panel border-r border-border flex flex-col z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="h-14 flex items-center px-5 border-b border-border gap-3">
-            <img src="/icon.png" alt="NEPSE Pro" className="w-8 h-8" />
+            <img src="/nepseprologo.png" alt="NEPSE Pro" className="w-8 h-8" />
             <div className="flex-1">
                 <div className="font-bold text-white text-sm">NEPSE PRO</div>
                 <div className="text-[9px] text-gray-500 font-bold tracking-widest uppercase">Live Terminal</div>
@@ -69,7 +70,20 @@ const Layout = () => {
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navLinks.map(({ path, icon: Icon, label }) => (
-            <NavLink key={path} to={path} onClick={() => setSidebarOpen(false)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <NavLink
+              key={path}
+              to={path}
+              onClick={(e) => {
+                if (!isAuthenticated && restrictedPaths.includes(path)) {
+                  e.preventDefault();
+                  alert('Create an account to access this feature.');
+                  navigate('/signup');
+                } else {
+                  setSidebarOpen(false);
+                }
+              }}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
               <Icon size={18} className="shrink-0" />
               <span>{label}</span>
             </NavLink>
@@ -90,9 +104,15 @@ const Layout = () => {
         </nav>
 
         <div className="p-3 border-t border-border">
-            <button onClick={logout} className="nav-item w-full text-red-500 hover:bg-red-500/10 hover:border-red-500/20">
-                <LogOut size={18} /> <span>Sign Out</span>
-            </button>
+            {isAuthenticated ? (
+                <button onClick={logout} className="nav-item w-full text-red-500 hover:bg-red-500/10 hover:border-red-500/20">
+                  <LogOut size={18} /> <span>Sign Out</span>
+                </button>
+            ) : (
+                <button onClick={() => navigate('/login')} className="nav-item w-full text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/20">
+                  <LogOut size={18} /> <span>Sign In</span>
+                </button>
+            )}
         </div>
       </aside>
 

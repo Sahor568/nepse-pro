@@ -2,7 +2,7 @@
 
 A full-stack web application for tracking and analyzing Nepal Stock Exchange (NEPSE) data with real-time charts, portfolio management, and market insights.
 
-## 🚀 Features
+##  Features
 
 ### Frontend
 - **Real-time Charts**: Interactive candlestick charts using Lightweight Charts
@@ -19,7 +19,7 @@ A full-stack web application for tracking and analyzing Nepal Stock Exchange (NE
 - **Database**: SQLite with Prisma ORM
 - **Portfolio & Watchlist**: CRUD operations for user data
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 - **React 19** with TypeScript
@@ -39,7 +39,7 @@ A full-stack web application for tracking and analyzing Nepal Stock Exchange (NE
 - **CORS** for cross-origin requests
 - **NEPSE API** wrapper for stock data
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 nepal nepse chart/
@@ -206,7 +206,7 @@ The application uses SQLite database with the following schema:
 - `buy_date` (Text)
 - `reference` (Text)
 
-## 🧪 Testing
+##  Testing
 
 ### Backend Tests
 ```bash
@@ -220,7 +220,7 @@ cd frontend
 npm test
 ```
 
-## 🚢 Deployment
+## Deployment
 
 ### Backend Deployment
 1. Build the TypeScript code:
@@ -241,7 +241,7 @@ npm test
    ```
 2. The built files will be in `dist/` directory ready to be served.
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -249,21 +249,21 @@ npm test
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [NEPSE API](https://github.com/rumess/nepse-api) for providing NEPSE data
 - [Lightweight Charts](https://github.com/tradingview/lightweight-charts) for charting library
 - [Prisma](https://prisma.io) for database ORM
 - [Tailwind CSS](https://tailwindcss.com) for styling framework
 
-## 📞 Support
+##  Support
 
 For support, please open an issue in the GitHub repository or contact the development team.
 
 ---
 
-**Happy Trading! 📈**
+**Happy Trading! **

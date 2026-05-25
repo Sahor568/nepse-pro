@@ -1,0 +1,24 @@
+services:
+  # Backend Express API Service
+  - type: web
+    name: nepse-pro-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      # Secure JWT secret will be automatically generated for you by Render
+      - key: JWT_SECRET
+        generateValue: true
+      # Google OAuth Keys (you can edit these in Render dashboard if you set them up)
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: GOOGLE_CALLBACK_URL
+        value: https://nepse-pro-backend.onrender.com/api/auth/google/callback

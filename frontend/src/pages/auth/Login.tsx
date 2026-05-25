@@ -61,6 +61,11 @@ const Login = () => {
     }
   };
 
+  const handleContinueAsGuest = () => {
+    localStorage.setItem('guest', 'true');
+    navigate('/dashboard');
+  };
+
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE}/auth/google`;
   };
@@ -137,7 +142,7 @@ const Login = () => {
         <div className="relative z-10 w-full max-w-md px-4">
           <div className="flex justify-center mb-8 animate-fadeUp">
               <div className="flex items-center gap-3">
-              <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
+              <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
               <div>
                 <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
                 <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -211,7 +216,7 @@ const Login = () => {
         {/* Logo */}
         <div className="flex justify-center mb-8 animate-fadeUp">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
+            <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
             <div>
               <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
               <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -300,11 +305,19 @@ const Login = () => {
               <span className="text-xs font-medium" style={{ color: 'var(--color-muted)' }}>or continue with</span>
               <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
             </div>
-
+            <button
+              type="button"
+              onClick={handleContinueAsGuest}
+              className="btn btn-secondary w-full py-2.5 mt-2"
+              style={{ background: '#6b7280', color: 'white', border: 'none', fontSize: '.875rem' }}
+            >
+              Continue as Guest
+            </button>
+            
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="btn w-full py-2.5 flex items-center justify-center gap-3 hover:opacity-90 transition-opacity"
+              className="btn w-full py-2.5 flex items-center justify-center gap-3 hover:opacity-90 transition-opacity mt-2"
               style={{ background: '#4285F4', color: 'white', border: 'none', fontSize: '.875rem' }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

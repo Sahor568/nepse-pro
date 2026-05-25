@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck } from 'lucide-react';
+import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck, BarChart2 } from 'lucide-react';
 import { AUTH_BASE } from '../../apiConfig';
 
 const API_BASE = 'http://localhost:5000/api';
@@ -18,6 +18,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState(0);
+  const [resending, setResending] = useState(false);
 
   React.useEffect(() => {
     if (resendTimer > 0) {
@@ -152,7 +153,7 @@ const Signup = () => {
         <div className="relative z-10 w-full max-w-md px-4">
           <div className="flex justify-center mb-8 animate-fadeUp">
               <div className="flex items-center gap-3">
-              <img src="/icon.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
+              <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
               <div>
                 <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
                 <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>
@@ -266,7 +267,7 @@ const Signup = () => {
               </div>
               <div>
                 <label className="block mb-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted)' }}>
-                  Mobile <span style={{ color: 'var(--color-dimmed)', textTransform: 'none', fontWeight: 400 }}>(optional, for SMS alerts)</span>
+                  Mobile <span style={{ color: 'var(--color-dimmed)', textTransform: 'none', fontWeight: 400 }}>(optional)</span>
                 </label>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-1.5 px-3 rounded-lg border text-sm font-semibold"

@@ -50,7 +50,7 @@ const Disclaimer = () => {
           },
           {
             title: 'College Project Status',
-            content: 'This platform is developed as part of a 6th semester BSc.CSIT project at SCHem College. It is not a commercial product and may contain bugs or incomplete features.',
+            content: 'This platform is developed as part of a 6th semester BCA project at SchEMS College. It is not a commercial product and may contain bugs or incomplete features.',
           },
         ].map((s, i) => (
           <div key={i} style={{ marginBottom: i < 5 ? '1.25rem' : 0, paddingBottom: i < 5 ? '1.25rem' : 0, borderBottom: i < 5 ? '1px solid var(--color-border)' : 'none' }}>
