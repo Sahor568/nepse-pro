@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import PublicHeader from './components/PublicHeader';
 import Dashboard from './pages/Dashboard';
@@ -15,10 +15,21 @@ import HowToUse from './pages/HowToUse';
 import Terms from './pages/Terms';
 import Disclaimer from './pages/Disclaimer';
 
+
+
 const isAuth = () => !!localStorage.getItem('token');
 
-const Guard = ({ children }: { children: React.ReactNode }) =>
-  isAuth() ? <>{children}</> : <Navigate to="/login" replace />;
+const Guard = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  const isGuest = localStorage.getItem('guest') === 'true';
+  if (isAuth()) {
+    return <>{children}</>;
+  }
+  if (isGuest && (location.pathname === '/dashboard' || location.pathname === '/')) {
+    return <>{children}</>;
+  }
+  return <Navigate to={isGuest ? '/signup' : '/login'} replace />;
+};
 
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
   <div style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column' }}>

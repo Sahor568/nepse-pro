@@ -17,8 +17,9 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [indices, setIndices] = useState<any[]>([]);
   const [ticker, setTicker] = useState<any[]>([]);
-
   const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+  const isAuthenticated = !!localStorage.getItem('token');
+  const restrictedPaths = ['/chart', '/portfolio', '/watchlist', '/profile'];
   const initials = (user?.name || 'JD').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   const logout = () => { localStorage.clear(); navigate('/login'); };
@@ -69,7 +70,20 @@ const Layout = () => {
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navLinks.map(({ path, icon: Icon, label }) => (
-            <NavLink key={path} to={path} onClick={() => setSidebarOpen(false)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <NavLink
+              key={path}
+              to={path}
+              onClick={(e) => {
+                if (!isAuthenticated && restrictedPaths.includes(path)) {
+                  e.preventDefault();
+                  alert('Create an account to access this feature.');
+                  navigate('/signup');
+                } else {
+                  setSidebarOpen(false);
+                }
+              }}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
               <Icon size={18} className="shrink-0" />
               <span>{label}</span>
             </NavLink>
@@ -90,9 +104,15 @@ const Layout = () => {
         </nav>
 
         <div className="p-3 border-t border-border">
-            <button onClick={logout} className="nav-item w-full text-red-500 hover:bg-red-500/10 hover:border-red-500/20">
-                <LogOut size={18} /> <span>Sign Out</span>
-            </button>
+            {isAuthenticated ? (
+                <button onClick={logout} className="nav-item w-full text-red-500 hover:bg-red-500/10 hover:border-red-500/20">
+                  <LogOut size={18} /> <span>Sign Out</span>
+                </button>
+            ) : (
+                <button onClick={() => navigate('/login')} className="nav-item w-full text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/20">
+                  <LogOut size={18} /> <span>Sign In</span>
+                </button>
+            )}
         </div>
       </aside>
 
