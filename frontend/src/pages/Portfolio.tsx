@@ -9,14 +9,17 @@ const Portfolio = () => {
   const [holdings, setHoldings] = useState<any[]>([]);
   const [stockStats, setStockStats] = useState<Record<string, { ltp: number, prevClose: number }>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPortfolio = async () => {
     try {
       const res = await authFetch(`${API_BASE}/user/portfolio`);
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data = await res.json();
-      setHoldings(data);
-    } catch (err) {
+      setHoldings(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Failed to load portfolio');
     }
   };
 
@@ -28,7 +31,8 @@ const Portfolio = () => {
   const fetchLivePrices = async (symbols: string[]) => {
     try {
       // Fetch live market data in one shot
-      const liveRes = await fetch(`${NEPSE_BASE}/live`);
+      const liveRes = await authFetch(`${NEPSE_BASE}/live`);
+      if (!liveRes.ok) throw new Error(`Market data server returned ${liveRes.status}`);
       const liveData: any[] = await liveRes.json();
       const liveMap: Record<string, any> = {};
       liveData.forEach((s: any) => { liveMap[s.symbol] = s; });
@@ -45,7 +49,7 @@ const Portfolio = () => {
         }
         // Fallback: use most recent history
         try {
-          const res = await fetch(`${NEPSE_BASE}/history/${symbol}`);
+          const res = await authFetch(`${NEPSE_BASE}/history/${symbol}`);
           const data = await res.json();
           if (data && data.length > 0) {
             const latest = data[data.length - 1];
@@ -179,7 +183,14 @@ const Portfolio = () => {
         <StockSearch onSelect={addHolding} placeholder="Add to portfolio..." />
       </div>
 
-      {loading ? (
+      {error && !loading && holdings.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-12 gap-4">
+          <div className="text-red-500 text-5xl">⚠</div>
+          <h2 className="text-white font-bold text-lg">Data Fetch Error</h2>
+          <p className="text-gray-400 text-sm max-w-md text-center">{error}</p>
+          <button onClick={() => { setError(null); setLoading(true); fetchPortfolio(); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Retry</button>
+        </div>
+      ) : loading ? (
         <div className="flex items-center justify-center p-10"><Loader2 className="animate-spin text-blue-500" size={32} /></div>
       ) : (
         <>

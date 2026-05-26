@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck, BarChart2 } from 'lucide-react';
-import { AUTH_BASE } from '../../apiConfig';
-
-const API_BASE = 'http://localhost:5000/api';
+import { BarChart2, User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, MailCheck } from 'lucide-react';
+import { AUTH_BASE, API_BASE } from '../../apiConfig';
+import { useAuth } from '../../context/AuthContext';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [step, setStep] = useState<'form' | 'email_verify'>('form');
   const [userId, setUserId] = useState<number | null>(null);
   const [formData, setFormData] = useState({
@@ -110,8 +110,7 @@ const Signup = () => {
         setError(data.error || 'Verification failed.');
         return;
       }
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      login(data.token, data.user);
       navigate('/dashboard');
     } catch (err) {
       setError('Unable to connect to server.');
@@ -229,9 +228,7 @@ const Signup = () => {
       <div className="relative z-10 w-full max-w-md px-4">
         <div className="flex justify-center mb-8 animate-fadeUp">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(8,153,129,.15)', border: '1px solid rgba(8,153,129,.3)' }}>
-              <BarChart2 className="w-5 h-5" style={{ color: 'var(--color-green)' }} />
-            </div>
+            <img src="/nepseprologo.png" alt="NEPSE Pro" style={{ width: 40, height: 40 }} />
             <div>
               <div className="text-lg font-bold text-white tracking-wide">NEPSE Pro</div>
               <div className="text-[10px] font-medium tracking-[0.15em] uppercase" style={{ color: 'var(--color-muted)' }}>Trading Terminal</div>

@@ -58,7 +58,7 @@ const HeaderNotifications = ({ mainIndex, ticker }: { mainIndex: any, ticker: an
 
         // Fetch all live prices in one call
         try {
-          const liveRes = await fetch(`${NEPSE_BASE}/live`);
+          const liveRes = await authFetch(`${NEPSE_BASE}/live`);
           const liveData: any[] = await liveRes.json();
           liveData.forEach((s: any) => {
             if (uniqueSymbols.includes(s.symbol) && s.lastTradedPrice) {
@@ -73,7 +73,7 @@ const HeaderNotifications = ({ mainIndex, ticker }: { mainIndex: any, ticker: an
         // For any still-missing symbols, fall back to history
         await Promise.all(uniqueSymbols.filter(sym => !stats[sym]).map(async (symbol) => {
            try {
-             const res = await fetch(`${NEPSE_BASE}/history/${symbol}`);
+             const res = await authFetch(`${NEPSE_BASE}/history/${symbol}`);
              const data = await res.json();
              if (data && data.length > 0) {
                 const latest = data[data.length - 1];

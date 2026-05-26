@@ -1,4 +1,8 @@
-export const API_BASE = import.meta.env.DEV ? 'http://localhost:5000/api' : 'https://nepse-pro-api.onrender.com/api';
+// In development, use the Vite proxy (relative /api path) so requests go to localhost:5000.
+// In production, use the deployed Render backend directly.
+export const API_BASE = import.meta.env.DEV
+  ? '/api'
+  : 'https://nepse-pro-api.onrender.com/api';
 export const NEPSE_BASE = `${API_BASE}/nepse`;
 export const AUTH_BASE = `${API_BASE}/auth`;
 export const USER_BASE = `${API_BASE}/user`;
@@ -33,7 +37,7 @@ export async function authFetch(
   if (res.status === 401) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    window.dispatchEvent(new Event('auth-change'));
   }
 
   return res;

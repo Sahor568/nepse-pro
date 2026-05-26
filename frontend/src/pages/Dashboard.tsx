@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Activity, DollarSign, BarChart2, ChevronRight, Clock, Loader2 } from 'lucide-react';
-import { NEPSE_BASE } from '../apiConfig';
+import { NEPSE_BASE, authFetch } from '../apiConfig';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [losers, setLosers] = useState<any[]>([]);
   const [liveMarket, setLiveMarket] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const user: any = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
   const hour = new Date().getHours();
@@ -20,21 +21,28 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [idxRes, sumRes, gainRes, lossRes, liveRes] = await Promise.all([
-          fetch(`${NEPSE_BASE}/index`),
-          fetch(`${NEPSE_BASE}/summary`),
-          fetch(`${NEPSE_BASE}/gainers`),
-          fetch(`${NEPSE_BASE}/losers`),
-          fetch(`${NEPSE_BASE}/live`)
+          authFetch(`${NEPSE_BASE}/index`).catch(() => null),
+          authFetch(`${NEPSE_BASE}/summary`).catch(() => null),
+          authFetch(`${NEPSE_BASE}/gainers`).catch(() => null),
+          authFetch(`${NEPSE_BASE}/losers`).catch(() => null),
+          authFetch(`${NEPSE_BASE}/live`).catch(() => null)
         ]);
 
-        setIndices(await idxRes.json());
-        setSummary(await sumRes.json());
-        setGainers(await gainRes.json());
-        setLosers(await lossRes.json());
-        setLiveMarket(await liveRes.json());
+        const failed = [idxRes, sumRes, gainRes, lossRes, liveRes].some(r => !r);
+        if (failed) {
+          setError('Could not connect to NEPSE API. Please ensure the backend server is running.');
+        }
+
+        if (idxRes) { try { const d = await idxRes.json(); setIndices(Array.isArray(d) ? d : []); } catch { /* skip */ } }
+        if (sumRes) { try { const d = await sumRes.json(); setSummary(d); } catch { /* skip */ } }
+        if (gainRes) { try { const d = await gainRes.json(); setGainers(Array.isArray(d) ? d : []); } catch { /* skip */ } }
+        if (lossRes) { try { const d = await lossRes.json(); setLosers(Array.isArray(d) ? d : []); } catch { /* skip */ } }
+        if (liveRes) { try { const d = await liveRes.json(); setLiveMarket(Array.isArray(d) ? d : []); } catch { /* skip */ } }
+
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch dashboard data', err);
+        setError('Could not connect to NEPSE API. Please ensure the backend server is running.');
         setLoading(false);
       }
     };
@@ -64,6 +72,17 @@ const Dashboard = () => {
           <div className="flex flex-col items-center justify-center h-full gap-4 text-blue-500">
               <Loader2 className="animate-spin" size={48} />
               <p className="text-gray-400 font-medium tracking-wide">Fetching Live NEPSE Data...</p>
+          </div>
+      );
+  }
+
+  if (error) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+              <div className="text-red-500 text-5xl">⚠</div>
+              <h2 className="text-white font-bold text-lg">Data Fetch Error</h2>
+              <p className="text-gray-400 text-sm max-w-md text-center">{error}</p>
+              <button onClick={() => { setError(null); setLoading(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Retry</button>
           </div>
       );
   }
@@ -188,7 +207,8 @@ const Dashboard = () => {
             <tbody>
               {liveMarket.slice(0, 10).map((row) => {
                 const up = row.percentageChange >= 0;
-                const chg = +(row.lastTradedPrice - row.previousClose).toFixed(2);
+                const prevClose = row.previousClose || row.closePrice || (row.lastTradedPrice - (row.percentageChange * row.lastTradedPrice / 100)) || 0;
+                const chg = +(row.lastTradedPrice - prevClose).toFixed(2);
                 return (
                   <tr key={row.symbol}>
                     <td>

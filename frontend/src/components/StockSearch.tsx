@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { NEPSE_BASE } from '../apiConfig';
+import { NEPSE_BASE, authFetch } from '../apiConfig';
 
 interface StockSearchProps {
   onSelect: (stock: any) => void;
@@ -17,13 +17,13 @@ const StockSearch: React.FC<StockSearchProps> = ({ onSelect, placeholder = 'Sear
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${NEPSE_BASE}/securities`)
-      .then(res => res.json())
+    authFetch(`${NEPSE_BASE}/securities`)
+      .then(res => { if (!res.ok) throw new Error(`Server returned ${res.status}`); return res.json(); })
       .then(data => {
         setStocks(Array.isArray(data) ? data : []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => { console.error('Failed to fetch securities:', err); setStocks([]); setLoading(false); });
 
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {

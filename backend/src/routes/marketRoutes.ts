@@ -1,6 +1,10 @@
 import { Router } from 'express';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
+
+// Require authentication for all market data endpoints
+router.use(authMiddleware);
 
 // Mock endpoint for market data
 router.get('/history', (req, res) => {

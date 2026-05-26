@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { Nepse } from '@rumess/nepse-api';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
+
+// Require valid JWT for all NEPSE market-data routes
+router.use(authMiddleware);
 const nepse = new Nepse();
 
 // In-memory cache to avoid hammering the API
@@ -20,7 +24,7 @@ const cached = async <T>(key: string, fn: () => Promise<T>): Promise<T> => {
 router.get('/index', async (_: Request, res: Response) => {
   try {
     const data = await cached('index', () => nepse.getNepseIndex());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -30,7 +34,7 @@ router.get('/index', async (_: Request, res: Response) => {
 router.get('/summary', async (_: Request, res: Response) => {
   try {
     const data = await cached('summary', () => nepse.getMarketSummary());
-    res.json(data);
+    res.json(data || {});
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -40,7 +44,7 @@ router.get('/summary', async (_: Request, res: Response) => {
 router.get('/status', async (_: Request, res: Response) => {
   try {
     const data = await cached('status', () => nepse.getMarketStatus());
-    res.json(data);
+    res.json(data || {});
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -77,6 +81,7 @@ router.get('/live', async (_: Request, res: Response) => {
           percentageChange: s.percentageChange || 0,
           highPrice: s.highPrice || s.ltp || 0,
           lowPrice: s.lowPrice || s.ltp || 0,
+          previousClose: s.previousClose || s.closePrice || tInfo.closingPrice || 0,
           totalTradeQuantity: tInfo.turnover ? Math.round((tInfo.turnover / (tInfo.closingPrice || 1)) * 100) : 0,
           totalTradeValue: tInfo.turnover || 0,
           closePrice: tInfo.closingPrice || s.ltp || 0,
@@ -92,6 +97,7 @@ router.get('/live', async (_: Request, res: Response) => {
           percentageChange: s.percentageChange || 0,
           highPrice: s.highPrice || s.ltp || 0,
           lowPrice: s.lowPrice || s.ltp || 0,
+          previousClose: s.previousClose || s.closePrice || tInfo.closingPrice || 0,
           totalTradeQuantity: tInfo.turnover ? Math.round((tInfo.turnover / (tInfo.closingPrice || 1)) * 100) : 0,
           totalTradeValue: tInfo.turnover || 0,
           closePrice: tInfo.closingPrice || s.ltp || 0,
@@ -108,6 +114,7 @@ router.get('/live', async (_: Request, res: Response) => {
                 percentageChange: 0,
                 highPrice: t.closingPrice || 0,
                 lowPrice: t.closingPrice || 0,
+                previousClose: t.previousClose || t.closingPrice || 0,
                 totalTradeQuantity: t.turnover ? Math.round(t.turnover / (t.closingPrice || 1)) : 0,
                 totalTradeValue: t.turnover || 0,
                 closePrice: t.closingPrice || 0,
@@ -139,7 +146,7 @@ router.get('/today-price', async (_: Request, res: Response) => {
 router.get('/gainers', async (_: Request, res: Response) => {
   try {
     const data = await cached('gainers', () => nepse.getTopTenGainers());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -149,7 +156,7 @@ router.get('/gainers', async (_: Request, res: Response) => {
 router.get('/losers', async (_: Request, res: Response) => {
   try {
     const data = await cached('losers', () => nepse.getTopTenLosers());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -159,7 +166,7 @@ router.get('/losers', async (_: Request, res: Response) => {
 router.get('/turnover', async (_: Request, res: Response) => {
   try {
     const data = await cached('turnover', () => nepse.getTopTenTurnoverScrips());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -169,7 +176,7 @@ router.get('/turnover', async (_: Request, res: Response) => {
 router.get('/sub-indices', async (_: Request, res: Response) => {
   try {
     const data = await cached('sub-indices', () => nepse.getNepseSubIndices());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -179,7 +186,7 @@ router.get('/sub-indices', async (_: Request, res: Response) => {
 router.get('/index-graph', async (_: Request, res: Response) => {
   try {
     const data = await cached('index-graph', () => nepse.getNepseIndexDailyGraph());
-    res.json(data);
+    res.json(Array.isArray(data) ? data : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -193,7 +200,8 @@ router.get('/history/:symbol', async (req: Request, res: Response) => {
     const securityId = (await nepse.getSecuritySymbolIdKeymap()).get(String(symbol).toUpperCase());
     if (!securityId) throw new Error(`Security symbol ${symbol} not found`);
     const raw: any = await cached(`history-${symbol}`, () => nepse.requestGETAPI(`/api/nots/market/security/price/${securityId}?size=5000`));
-    const ohlcv = (raw.content as any[])
+    const content = raw?.content ?? raw ?? [];
+    const ohlcv = (Array.isArray(content) ? content : [])
       .map((d: any) => ({
         time: d.businessDate,           // 'YYYY-MM-DD'
         open:  d.openPrice ?? d.lastTradedPrice ?? d.previousDayClosePrice,
@@ -220,7 +228,7 @@ router.get('/intraday/:symbol', async (req: Request, res: Response) => {
   const { symbol } = req.params;
   try {
     const raw = await cached(`intraday-${symbol}`, () => nepse.getSecurityDailyGraph(String(symbol).toUpperCase()));
-    res.json(raw);
+    res.json(Array.isArray(raw) ? raw : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
@@ -230,7 +238,7 @@ router.get('/intraday/:symbol', async (req: Request, res: Response) => {
 router.get('/securities', async (_: Request, res: Response) => {
   try {
     const raw = await cached('securities', () => nepse.getSecurityList());
-    res.json(raw);
+    res.json(Array.isArray(raw) ? raw : []);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

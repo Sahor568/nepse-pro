@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, TrendingUp, TrendingDown, Star, Activity, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { NEPSE_BASE } from '../apiConfig';
+import { NEPSE_BASE, authFetch } from '../apiConfig';
 
 type SortKey = 'lastTradedPrice' | 'percentageChange' | 'totalTradeQuantity' | 'symbol';
 type SortDir = 'asc' | 'desc';
@@ -11,15 +11,19 @@ const MarketWatch = () => {
   const [search, setSearch] = useState('');
   const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('totalTradeQuantity');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [watchlist, setWatchlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('watchlist') || '[]'));
 
   useEffect(() => {
-    fetch(`${NEPSE_BASE}/live`)
-      .then(res => res.json())
+    authFetch(`${NEPSE_BASE}/live`)
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+      })
       .then(data => { setStocks(Array.isArray(data) ? data : []); setLoading(false); })
-      .catch(err => { console.error(err); setLoading(false); });
+      .catch(err => { console.error(err); setError('Could not load market data. Please ensure the backend server is running.'); setLoading(false); });
   }, []);
 
   useEffect(() => {
@@ -50,6 +54,17 @@ const MarketWatch = () => {
 
   if (loading) {
     return <div className="h-full flex flex-col items-center justify-center text-blue-500 gap-4"><Loader2 className="animate-spin" size={42} /> <p className="text-gray-400">Loading Market Data...</p></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+        <div className="text-red-500 text-5xl">⚠</div>
+        <h2 className="text-white font-bold text-lg">Data Fetch Error</h2>
+        <p className="text-gray-400 text-sm max-w-md text-center">{error}</p>
+        <button onClick={() => { setError(null); setLoading(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Retry</button>
+      </div>
+    );
   }
 
   return (

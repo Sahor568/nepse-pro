@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, LogIn, MailCheck } from 'lucide-react';
-import { AUTH_BASE } from '../../apiConfig';
-
-const API_BASE = 'http://localhost:5000/api';
+import { BarChart2, Mail, Lock, Eye, EyeOff, LogIn, MailCheck } from 'lucide-react';
+import { AUTH_BASE, API_BASE } from '../../apiConfig';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
@@ -51,8 +51,7 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      login(data.token, data.user);
       navigate('/dashboard');
     } catch (err) {
       setError('Unable to connect to server. Is the backend running?');
@@ -99,8 +98,7 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      login(data.token, data.user);
       navigate('/dashboard');
     } catch (err) {
       setError('Unable to connect to server.');
@@ -305,15 +303,16 @@ const Login = () => {
               <span className="text-xs font-medium" style={{ color: 'var(--color-muted)' }}>or continue with</span>
               <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
             </div>
+
             <button
               type="button"
               onClick={handleContinueAsGuest}
-              className="btn btn-secondary w-full py-2.5 mt-2"
+              className="btn w-full py-2.5 mt-2"
               style={{ background: '#6b7280', color: 'white', border: 'none', fontSize: '.875rem' }}
             >
               Continue as Guest
             </button>
-            
+
             <button
               type="button"
               onClick={handleGoogleLogin}

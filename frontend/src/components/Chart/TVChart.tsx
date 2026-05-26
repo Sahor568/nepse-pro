@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom';
 import { createChart, ColorType, CrosshairMode, Time, IChartApi, ISeriesApi, CandlestickData, WhitespaceData, LineStyle, LineWidth } from 'lightweight-charts';
 import { Settings, Maximize2, BarChart2, TrendingUp, X, ChevronDown, Search, Loader2, Play, Sliders, Trash2 } from 'lucide-react';
-import { NEPSE_BASE } from '../../apiConfig';
+import { NEPSE_BASE, authFetch } from '../../apiConfig';
 
 /* ─── Advanced Indicator Math ──────────────────────────────────── */
 
@@ -108,6 +108,7 @@ const TVChart = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [chartError, setChartError] = useState<string | null>(null);
   const [ohlc, setOhlc] = useState<any>(null);
   
   // Advanced Indicator State
@@ -131,7 +132,10 @@ const TVChart = () => {
   useEffect(() => { localStorage.setItem('tvchart_indicators', JSON.stringify(activeIndicators)); }, [activeIndicators]);
 
   useEffect(() => {
-    fetch(`${NEPSE_BASE}/securities`).then(res => res.json()).then(data => setSecurities(data || []));
+    authFetch(`${NEPSE_BASE}/securities`)
+      .then(res => { if (!res.ok) throw new Error(`Server returned ${res.status}`); return res.json(); })
+      .then(data => setSecurities(Array.isArray(data) ? data : []))
+      .catch(err => { console.error('Failed to fetch securities:', err); setSecurities([]); });
   }, []);
 
   const candleSeriesRef = useRef<any>(null);
@@ -139,12 +143,14 @@ const TVChart = () => {
   const buildChart = useCallback(async () => {
     if (!containerRef.current) return;
     setLoading(true);
+    setChartError(null);
     try {
       let data: any[] = [];
       const isIntraday = ['1m', '5m', '15m', '1h', '4h'].includes(timeframe);
       
       if (isIntraday) {
-        const resp = await fetch(`${NEPSE_BASE}/intraday/${symbol}`);
+        const resp = await authFetch(`${NEPSE_BASE}/intraday/${symbol}`);
+        if (!resp.ok) throw new Error(`Failed to fetch intraday data for ${symbol} (status ${resp.status})`);
         const raw = await resp.json();
         
         let intervalSecs = 60; // 1m
@@ -183,10 +189,12 @@ const TVChart = () => {
         data = Object.values(buckets).sort((a: any, b: any) => (a.time as number) - (b.time as number));
       } else {
         // Fetch historical data AND today's raw trades at the same time to prevent the "1 day late" API delay! 
+ 
         const [histResp, liveResp] = await Promise.all([
-           fetch(`${NEPSE_BASE}/history/${symbol}`),
-           fetch(`${NEPSE_BASE}/intraday/${symbol}`)
+           authFetch(`${NEPSE_BASE}/history/${symbol}`),
+           authFetch(`${NEPSE_BASE}/intraday/${symbol}`)
         ]);
+        if (!histResp.ok) throw new Error(`Failed to fetch history data for ${symbol} (status ${histResp.status})`);
         const hist = await histResp.json();
         const live = await liveResp.json();
         
@@ -231,7 +239,11 @@ const TVChart = () => {
         
         data = aggregated;
       }
-      if (!data.length) { setLoading(false); return; }
+      if (!data.length) {
+        setChartError(`No chart data available for ${symbol}. The stock may not have traded recently or the API is unavailable.`);
+        setLoading(false);
+        return;
+      }
 
       if (chartRef.current) chartRef.current.remove();
       const chart = createChart(containerRef.current, {
@@ -287,7 +299,10 @@ const TVChart = () => {
       window.addEventListener('resize', resize);
       setLoading(false);
       return () => window.removeEventListener('resize', resize);
-    } catch { setLoading(false); }
+    } catch (err: any) {
+      setChartError(err.message || `Failed to load chart data for ${symbol}. Please ensure the backend server is running.`);
+      setLoading(false);
+    }
   }, [symbol, timeframe, activeIndicators]);
 
   useEffect(() => { buildChart(); }, [buildChart]);
@@ -299,7 +314,7 @@ const TVChart = () => {
       try {
         const isIntraday = ['1m', '5m', '15m', '1h', '4h'].includes(timeframe);
         if (isIntraday) {
-          const resp = await fetch(`${NEPSE_BASE}/intraday/${symbol}`);
+          const resp = await authFetch(`${NEPSE_BASE}/intraday/${symbol}`);
           const raw = await resp.json();
           if (raw && raw.length > 0) {
             const last = raw.sort((a: any, b: any) => (a.time as number) - (b.time as number));
@@ -390,6 +405,16 @@ const TVChart = () => {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Chart Error Display */}
+        {chartError && (
+          <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center bg-[#131722]/95 backdrop-blur-sm gap-4 p-8">
+            <div className="text-red-500 text-5xl">⚠</div>
+            <h2 className="text-white font-bold text-lg">Chart Data Error</h2>
+            <p className="text-gray-400 text-sm max-w-md text-center">{chartError}</p>
+            <button onClick={() => { setChartError(null); buildChart(); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors">Retry</button>
+          </div>
+        )}
+
         {/* Indicators Overlay */}
         <div className="absolute top-16 left-16 z-40 space-y-2 pointer-events-none">
            {activeIndicators.map(ind => (

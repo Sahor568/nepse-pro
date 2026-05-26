@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, LineChart, Activity, Briefcase, Star, Settings, Search, Bell, LogOut, Menu, X, ChevronDown, Users, BookOpen } from 'lucide-react';
-import { NEPSE_BASE } from '../apiConfig';
+import { NEPSE_BASE, authFetch } from '../apiConfig';
 import HeaderNotifications from './HeaderNotifications';
 
 const navLinks = [
@@ -28,8 +28,8 @@ const Layout = () => {
     const fetchTicker = async () => {
         try {
             const [idxRes, gainRes] = await Promise.all([
-                fetch(`${NEPSE_BASE}/index`),
-                fetch(`${NEPSE_BASE}/gainers`)
+                authFetch(`${NEPSE_BASE}/index`),
+                authFetch(`${NEPSE_BASE}/gainers`)
             ]);
             setIndices(await idxRes.json());
             setTicker(await gainRes.json());
@@ -134,7 +134,17 @@ const Layout = () => {
              ))}
           </div>
 
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="hidden md:flex items-center gap-3 mr-2">
+             <NavLink to="/about" className="text-[10px] font-medium uppercase tracking-wider hover:text-white transition-colors" style={{ color: 'var(--color-muted)' }}>About</NavLink>
+             <span style={{ color: 'var(--color-dimmed)', fontSize: '.6rem' }}>·</span>
+             <NavLink to="/how-to-use" className="text-[10px] font-medium uppercase tracking-wider hover:text-white transition-colors" style={{ color: 'var(--color-muted)' }}>Guide</NavLink>
+             <span style={{ color: 'var(--color-dimmed)', fontSize: '.6rem' }}>·</span>
+             <NavLink to="/terms" className="text-[10px] font-medium uppercase tracking-wider hover:text-white transition-colors" style={{ color: 'var(--color-muted)' }}>Terms</NavLink>
+             <span style={{ color: 'var(--color-dimmed)', fontSize: '.6rem' }}>·</span>
+             <NavLink to="/disclaimer" className="text-[10px] font-medium uppercase tracking-wider hover:text-white transition-colors" style={{ color: 'var(--color-muted)' }}>Disc.</NavLink>
+          </div>
+
+          <div className="flex items-center gap-4 ml-auto">
              {mainIndex && (
                  <div className="hidden sm:flex flex-col items-end">
                      <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider">NEPSE Index</div>
@@ -146,14 +156,7 @@ const Layout = () => {
                      </div>
                  </div>
              )}
-             <div className="w-px h-6 bg-border" />
-             <div className="hidden md:flex items-center gap-1">
-                <NavLink to="/about" className="text-[11px] font-medium px-2 py-1 rounded transition-colors" style={({ isActive }) => ({ color: isActive ? 'var(--color-blue)' : 'var(--color-muted)', background: isActive ? 'rgba(41,98,255,.1)' : 'transparent', textDecoration: 'none' })}>About</NavLink>
-                <NavLink to="/how-to-use" className="text-[11px] font-medium px-2 py-1 rounded transition-colors" style={({ isActive }) => ({ color: isActive ? 'var(--color-blue)' : 'var(--color-muted)', background: isActive ? 'rgba(41,98,255,.1)' : 'transparent', textDecoration: 'none' })}>Guide</NavLink>
-                <NavLink to="/terms" className="text-[11px] font-medium px-2 py-1 rounded transition-colors hidden lg:inline" style={({ isActive }) => ({ color: isActive ? 'var(--color-blue)' : 'var(--color-muted)', background: isActive ? 'rgba(41,98,255,.1)' : 'transparent', textDecoration: 'none' })}>Terms</NavLink>
-                <NavLink to="/disclaimer" className="text-[11px] font-medium px-2 py-1 rounded transition-colors hidden lg:inline" style={({ isActive }) => ({ color: isActive ? 'var(--color-blue)' : 'var(--color-muted)', background: isActive ? 'rgba(41,98,255,.1)' : 'transparent', textDecoration: 'none' })}>Disc.</NavLink>
-             </div>
-             <div className="w-px h-6 bg-border" />
+             <div className="w-px h-8 bg-border hidden sm:block" />
              <HeaderNotifications mainIndex={mainIndex} ticker={ticker} />
           </div>
         </header>

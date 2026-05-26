@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const GoogleCallback = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [params] = useSearchParams();
   const [showSuccess, setShowSuccess] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -16,8 +18,7 @@ const GoogleCallback = () => {
     const provider = params.get('provider') || 'google';
 
     if (token && userId) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ id: userId, name, email, provider }));
+      login(token, { id: userId!, name: name || '', email: email || '', provider });
       setUserEmail(email || '');
       setShowSuccess(true);
       setTimeout(() => {
